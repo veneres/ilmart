@@ -1,0 +1,3 @@
+[submodule "LightGBM"]
+	path = LightGBM
+	url = https://github.com/veneres/LightGBM

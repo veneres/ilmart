@@ -1,0 +1,29 @@
+{
+  "path_out": "../best_models/ilmart",
+  "path_out_varying": "../best_models/ilmart_varying_interactions",
+  "path_eval": "../results/ndcg",
+  "common_params": {
+    "objective": "lambdarank",
+    "min_data_in_leaf": 50,
+    "min_sum_hessian_in_leaf": 0,
+    "lambdarank_truncation_level": 10,
+    "num_threads": 40,
+    "eval_at": 10,
+    "force_col_wise": true,
+    "verbosity": -1
+  },
+  "param_grid": {
+    "learning_rate": [
+      0.001,
+      0.01,
+      0.1
+    ],
+    "num_leaves": [
+      32,
+      64,
+      128
+    ]
+  },
+  "boosting_rounds": 2000,
+  "n_interactions": 50
+}
