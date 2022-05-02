@@ -59,7 +59,7 @@ Some simple scripts to replicate the major results presented in the related pape
 If you use our work, please consider to cite it with:
 
 ```
-@inproceedings{DBLP:conf/sigir/BusolinLN00T21,
+@inproceedings{lucchese_ilmart_2022,
   author    = {Claudio Lucchese and
                Franco Maria Nardini and
                Salvatore Orlando and
