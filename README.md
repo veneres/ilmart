@@ -58,5 +58,21 @@ Some simple scripts to replicate the major results presented in the related pape
 ## Citation
 If you use our work, please consider to cite it with:
 
-(To be generated)
+```
+@inproceedings{DBLP:conf/sigir/BusolinLN00T21,
+  author    = {Claudio Lucchese and
+               Franco Maria Nardini and
+               Salvatore Orlando and
+               Raffaele Perego and
+               Alberto Veneri},
+  title     = {ILMART: Interpretable Ranking with Constrained LambdaMART},
+  booktitle = {{SIGIR} '22: The 45th International {ACM} {SIGIR} Conference on Research
+               and Development in Information Retrieval, Madrid, Spain, July
+               11-15, 2022},
+  publisher = {{ACM}},
+  year      = {2022},
+  url       = {https://doi.org/10.1145/3477495.3531840},
+  doi       = {10.1145/3477495.3531840}
+}
+```
 
