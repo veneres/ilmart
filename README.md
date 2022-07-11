@@ -1,7 +1,9 @@
 # ILMART: Interpretable Ranking with Constrained LambdaMART
 This repository contains the proof of concept of ILMART, a modified version of LambdaMART to create an interpretable
 learning-to-rank model.
-Major details about the algorithms can be found in the related paper: TODO add link to the publication.
+Major details about the algorithms can be found in the related paper: 
+
+[ILMART: Interpretable Ranking with Constrained LambdaMART](https://dl.acm.org/doi/10.1145/3477495.3531840)
 
 ## Installation
 There are two main steps to install the packages
