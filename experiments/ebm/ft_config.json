@@ -1,0 +1,5 @@
+{
+  "optuna_min_max": {
+    "outer_bags": [1, 5, 10, 15, 20]
+  }
+}
