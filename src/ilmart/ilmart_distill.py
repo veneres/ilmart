@@ -1,40 +1,59 @@
-import itertools
+from __future__ import annotations
 
+import itertools
+import math
+from pathlib import Path
+
+import numpy
 import numpy as np
 from collections import defaultdict
 import lightgbm as lgbm
 
 
 class IlmartDistill:
-    def __init__(self, model: lgbm.Booster, distill_mode="full", n_sample=None):
+    FEAT_MIN = -np.inf
+    FEAT_MAX = np.inf
+
+    def __init__(self, model: lgbm.Booster, n_sample=None):
         self.model = model
         self.feat_name_to_index = {feat: i for i, feat in enumerate(self.model.dump_model()['feature_names'])}
-        self.feat_min = {}
-        self.feat_max = {}
-        for feat_name, feat_info in self.model.dump_model()["feature_infos"].items():
-            feat_index = self.feat_name_to_index[feat_name]
-            feat_range = feat_info["max_value"] - feat_info["min_value"]
-            self.feat_min[feat_index] = feat_info["min_value"] - feat_range * 0.5
-            self.feat_max[feat_index] = feat_info["max_value"] + feat_range * 0.5
+
         self.n_sample = n_sample
-        self.distill_mode = distill_mode
+
+        self.feat_used = None  # can be single features or pairs of features
 
         # To be computed later
         self.hist = None
         self.splitting_values = None
-        self.__create_hist_dict()
+        self._distill()
 
-    def __compute_hist(self, tree_structure: dict, feat_used: tuple, feat_min_max=None):
-        if feat_min_max is None:
-            feat_min_max = np.array([[self.feat_min[feat], self.feat_max[feat]] for feat in feat_used], dtype='f')
+    def __compute_hist(self, tree_structure: dict, feat_used: tuple, bin_min_max=None):
+        if bin_min_max is None:
+            bin_min_max = np.array([[IlmartDistill.FEAT_MIN, IlmartDistill.FEAT_MAX] for _ in feat_used], dtype='f')
         if "leaf_index" in tree_structure:
             limits = []
             for i, feat in enumerate(feat_used):
-                start = np.nonzero(np.isclose(self.splitting_values[feat], feat_min_max[i][0]))[0][0]
-                try:
-                    end = np.nonzero(np.isclose(self.splitting_values[feat], feat_min_max[i][1]))[0][0]
-                except Exception as e:
-                    end = len(self.splitting_values[feat]) - 1
+                close_to_start = np.nonzero(np.isclose(bin_min_max[i][0], self.splitting_values[feat],
+                                                       rtol=1e-06,
+                                                       atol=1e-12), )[0]
+
+                if len(close_to_start) > 2:
+                    raise ValueError(f"Too many values close to the start of the bin {close_to_start}")
+
+                if len(close_to_start) == 2 and bin_min_max[i][0] > 0:  # we probably have a very small number near 0
+                    start = close_to_start[1]
+                else:
+                    start = close_to_start[0]
+                close_to_end = np.nonzero(np.isclose(bin_min_max[i][1],
+                                                     self.splitting_values[feat],
+                                                     rtol=1e-06,
+                                                     atol=1e-12))[0]
+                if len(close_to_end) > 2:
+                    raise ValueError(f"Too many values close to the end of the bin {close_to_end}")
+                if len(close_to_end) == 2 and bin_min_max[i][1] > 0:  # we probably have two very small number
+                    end = close_to_end[1]
+                else:
+                    end = close_to_end[0]
                 limits.append((start, end))
 
             selection = self.hist[feat_used]
@@ -43,114 +62,110 @@ class IlmartDistill:
             return
 
         split_index = feat_used.index(tree_structure["split_feature"])
+
         if "left_child" in tree_structure:
-            new_min_max = np.copy(feat_min_max)
+            new_min_max = np.copy(bin_min_max)
             new_min_max[split_index][1] = min(new_min_max[split_index][1], tree_structure["threshold"])
-            self.__compute_hist(tree_structure["left_child"], feat_used, feat_min_max=new_min_max)
+            self.__compute_hist(tree_structure["left_child"], feat_used, bin_min_max=new_min_max)
 
         if "right_child" in tree_structure:
-            new_min_max = np.copy(feat_min_max)
+            new_min_max = np.copy(bin_min_max)
             new_min_max[split_index][0] = max(new_min_max[split_index][0], tree_structure["threshold"])
-            self.__compute_hist(tree_structure["right_child"], feat_used, feat_min_max=new_min_max)
+            self.__compute_hist(tree_structure["right_child"], feat_used, bin_min_max=new_min_max)
 
         return
 
-    @staticmethod
-    def __splitting_values(tree_structure, splitting_values_forest, feat_used=None):
+    def _get_splitting_values(self, tree_structure: dict):
+        split_feat = tree_structure.get("split_feature", None)
+        if split_feat is None:
+            return
+        self.splitting_values[split_feat].add(tree_structure["threshold"])
+        self._get_splitting_values(tree_structure["left_child"])
+        self._get_splitting_values(tree_structure["right_child"])
+        return
+
+    def _get_feat_used(self, tree_structure: dict) -> set:
+        feat_used = set()
         split_feat = tree_structure.get("split_feature", None)
         if split_feat is None:
             return feat_used
-        if feat_used is None:
-            feat_used = set()
         feat_used.add(split_feat)
-        splitting_values_forest[split_feat].add(tree_structure["threshold"])
-        IlmartDistill.__splitting_values(tree_structure["left_child"], splitting_values_forest, feat_used)
-        IlmartDistill.__splitting_values(tree_structure["right_child"], splitting_values_forest, feat_used)
+        feat_used = feat_used.union(self._get_feat_used(tree_structure["left_child"]))
+        feat_used = feat_used.union(self._get_feat_used(tree_structure["right_child"]))
         return feat_used
 
-    def __create_hist_dict(self):
+    def _distill(self):
         self.hist = {}
-        feats_used = []
         tree_infos = self.model.dump_model()["tree_info"]
 
-        splitting_values_set = defaultdict(set)
-        self.splitting_values = {}
+        self.splitting_values = defaultdict(set)
 
-        # Retrive all the splitting values
+        # Retrive all the splitting values and insert them inside
         for tree_info in tree_infos:
             tree_structure = tree_info["tree_structure"]
-            feats_used.append(IlmartDistill.__splitting_values(tree_structure, splitting_values_set))
+            self._get_splitting_values(tree_structure)
 
-        if self.distill_mode == "full":
-            # Add maximum and minimum to have the complete range
-            for feat in splitting_values_set.keys():
-                splitting_values_set[feat].add(self.feat_max[feat])
-                splitting_values_set[feat].add(self.feat_min[feat])
+        # transform the sets in sorted lists and add extreme values
+        self.splitting_values = {key: [IlmartDistill.FEAT_MIN] + sorted(list(values)) + [IlmartDistill.FEAT_MAX]
+                                 for key, values in self.splitting_values.items()}
 
-            # From the set created to a numpy array with all the values and saved on the current object
-            for feat, values in splitting_values_set.items():
-                self.splitting_values[feat] = np.array(sorted(list(splitting_values_set[feat])))
-        else:
-            feat_infos = self.model.dump_model()["feature_infos"]
-            for feat, infos in feat_infos.items():
-                feat_i = self.feat_name_to_index[feat]
-                # self.n_sample + 1 because we want exactly self.n_sample bins
-                step = (self.feat_max[feat_i] - self.feat_min[feat_i]) / (self.n_sample + 1)
-                self.splitting_values[feat_i] = np.arange(self.feat_min[feat_i], self.feat_max[feat_i], step)
+        # Retrive all the features used and store them in self.feat_used as a set and in feat_used_per_tree as list
+        feat_used_per_tree = []
+        for tree_info in tree_infos:
+            tree_structure = tree_info["tree_structure"]
+            feat_used_per_tree.append(tuple(sorted(list(self._get_feat_used(tree_structure)))))
 
-        # Create a numpy array with shape corresponding to the feature dimension
-        for feat_used in feats_used:
-            feats_key = tuple(sorted(feat_used))
-            if feats_key not in self.hist:
-                shape = tuple([len(self.splitting_values[feat]) - 1 for feat in feats_key])
-                self.hist[feats_key] = np.zeros(shape)
+        self.feat_used = set(feat_used_per_tree)
+
+        # Create a numpy array with shape corresponding to the feature dimension to store the scores
+        for feat_used in self.feat_used:
+            shape = tuple([len(self.splitting_values[feat]) - 1 for feat in feat_used])
+            self.hist[feat_used] = np.zeros(shape)
 
         # Compute hist for each tree
-        if self.distill_mode == "full":
-            for tree_info, feats in zip(tree_infos, feats_used):
-                tree_structure = tree_info["tree_structure"]
-                feats_key = tuple(sorted(feats))
-                self.__compute_hist(tree_structure, feats_key)
-        else:
-            for feats_used in self.hist.keys():
-                mid_points = [(self.splitting_values[feat_used][1:] + self.splitting_values[feat_used][:-1]) / 2
-                              for feat_used in feats_used]
-                for coord, value in enumerate(itertools.product(*mid_points)):
-                    sample = np.zeros(self.model.num_feature())
-                    for i, feat_i in enumerate(feats_used):
-                        sample[feat_i] = value[i]
+        for tree_info, feats_key in zip(tree_infos, feat_used_per_tree):
+            tree_structure = tree_info["tree_structure"]
+            self.__compute_hist(tree_structure, feats_key)
 
-                    sample = sample.reshape((1, -1))
-                    if len(feats_used) == 1:
-                        self.hist[feats_used][coord] = self.model.predict(sample)
-                    else:
-                        self.hist[feats_used][coord // self.n_sample, coord % self.n_sample] = self.model.predict(
-                            sample)
-
-    @staticmethod
-    def __predict(row, model, interactions_limit=-1):
+    def _predict(self, row):
         res = 0
-        interaction_to_exclude = []
-        if interactions_limit != -1:
-            inter_contrib = [(feats, value)for feats, value in model.expected_contribution().items() if len(feats) > 1]
-            inter_contrib.sort(key=lambda x: x[1], reverse=True)
-            interaction_to_exclude = [feats for feats, value in inter_contrib[interactions_limit:]]
-        for feats_hist, hist in model.hist.items():
-            if feats_hist in interaction_to_exclude:
-                continue
+        for feats_hist, hist in self.hist.items():
             indices = []
             for feat in feats_hist:
-                index_to_add = np.searchsorted(model.splitting_values[feat], row[feat])
-                index_to_add -= 1
-                index_to_add = max(0, index_to_add)
-                index_to_add = min(len(model.splitting_values[feat]) - 2, index_to_add)
+                feat_value = row[feat]
+                index_to_add = None
+                for i, value in enumerate(self.splitting_values[feat]):
+                    if feat_value < value or math.isclose(feat_value, value):
+                        index_to_add = i - 1
+                        break
                 indices.append(index_to_add)
             res += hist[tuple(indices)]
+
         return res
 
-    def predict(self, X, interactions_limit=-1):
-        res = np.apply_along_axis(IlmartDistill.__predict, 1, X, self, interactions_limit=interactions_limit)
+    # This is mainly for model debugging, all the functions have not been optimized
+    def predict(self, X: np.ndarray):
+        res = numpy.zeros(X.shape[0])
+        for row_index in range(X.shape[0]):
+            res[row_index] = self._predict(X[row_index, :])
         return res
 
     def expected_contribution(self):
         return {feats: np.abs(hist).mean() for feats, hist in self.hist.items()}
+
+    def export(self, file_out: str | Path) -> None:
+        with open(file_out, "w") as f:
+            # Write number of features
+            f.write(f"{self.model.num_feature()}\n")
+
+            # Write splitting values
+            f.write(f"{str(len(self.hist.keys()))}\n")
+
+            for feats, scores in self.hist.items():
+                f.write(f"{len(feats)}\n")
+                for feat in feats:
+                    f.write(f"{feat}\n")
+                for feat in feats:
+                    f.write(f"{' '.join(str(v) for v in self.splitting_values[feat])}\n")
+
+                f.write(f"{' '.join(str(v) for v in scores.flatten())}\n")
