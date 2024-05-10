@@ -1,0 +1,42 @@
+{
+  "shared_params": {
+    "ilmart_distilled_path": "/code/src/ilmart/fast_distilled/build/fast_distilled",
+    "lightgbm_path": "~/lightgbm/lightgbm",
+    "lgbm_symlink_name": "lightgbm",
+    "ilmart_symlink_name": "ilmart_distilled",
+    "ds_symlink_name": "to_predict.txt",
+    "lgbm_model_symlink_name": "lgbm_model.txt",
+    "ds_symlink_name_lgbm": "to_predict_lgbm.txt",
+    "result_lgbm": "res_lgbm.txt",
+    "result_ilmart": "res_ilmart.txt",
+    "ilmart_model_file_name": "ilmart_model.txt",
+    "prediction_config_lgbm": "predict.conf",
+    "reps": 5
+  },
+  "experiments": [
+    {
+      "dataset": "web30k",
+      "split": "test",
+      "name": "test-inter",
+      "lgbm_model_path": "/data/ft/web30k/greedy/inter_greedy.lgbm"
+    },
+    {
+      "dataset": "web30k",
+      "split": "test",
+      "name": "test-no-inter",
+      "lgbm_model_path": "/data/ft/web30k/greedy/no_inter.lgbm"
+    },
+    {
+      "dataset": "web30k",
+      "split": "train",
+      "name": "train-inter",
+      "lgbm_model_path": "/data/ft/web30k/greedy/inter_greedy.lgbm"
+    },
+    {
+      "dataset": "web30k",
+      "split": "train",
+      "name": "train-no-inter",
+      "lgbm_model_path": "/data/ft/web30k/greedy/no_inter.lgbm"
+    }
+  ]
+}
