@@ -1,0 +1,24 @@
+{
+  "common_params": {
+    "objective": "lambdarank",
+    "min_data_in_leaf": 50,
+    "min_sum_hessian_in_leaf": 0,
+    "lambdarank_truncation_level": 13,
+    "num_threads": 60,
+    "eval_at": 10,
+    "force_col_wise": true,
+    "verbosity": -1
+  },
+  "hyper_opt_min_max": {
+    "learning_rate": {
+      "min": 1e-4,
+      "max": 0.1
+    },
+    "num_leaves": {
+      "min": 16,
+      "max": 512
+    }
+  },
+  "n_trials": 20,
+  "boosting_rounds": 10000
+}
