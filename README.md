@@ -1,3 +1,7 @@
+<p align="center">
+    <a href="https://dl.acm.org/doi/10.1145/3477495.3531840"><img src="https://badgen.net/static/paper/SIGIR 2024/green" /></a>
+    <a href="http://arxiv.org/abs/2206.00473"><img src="https://badgen.net/static/arXiv/2206.00473/red" /></a>
+</p>
 # ILMART: Interpretable LambdaMART
 This repository contains the proof of concept of ILMART, a modified version of LambdaMART to create an interpretable
 learning-to-rank model.
