@@ -1,10 +1,11 @@
-"""yahoo dataset."""
+"""yahoo_rankeval dataset."""
+from pathlib import Path
 
+import numpy as np
 import tensorflow_datasets as tfds
 import tensorflow as tf
 from tensorflow_datasets.ranking.libsvm_ranking_parser import LibSVMRankingParser
 import os
-
 
 """ 
 The dataset cannot be shared online due to license constraint, so the download phase is skipped and the data will be
@@ -17,7 +18,7 @@ The folder must contain three file:
 DATA_HOME = os.environ.get('RANKEVAL_DATA', os.path.join('~', 'rankeval_data'))
 DATA_HOME = os.path.expanduser(DATA_HOME)
 
-PATH = f"{DATA_HOME}/yahoo/set1"
+PATH = Path(DATA_HOME) / "yahoo" / "set1"
 
 _DESCRIPTION = """
 C14 Yahoo! Learning to Rank Challenge, version 1.0
@@ -56,7 +57,7 @@ _FEATURE_NAMES = {n: f"feature_{n}" for n in range(1, 700)}
 _LABEL_NAME = "label"
 
 
-class Yahoo(tfds.core.GeneratorBasedBuilder):
+class YahooRankeval(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for yahoo dataset."""
 
     VERSION = tfds.core.Version('1.0.0')
@@ -69,11 +70,13 @@ class Yahoo(tfds.core.GeneratorBasedBuilder):
         encoding = tfds.features.Encoding.ZLIB
         features = {
             name: tfds.features.Tensor(
-                shape=(None,), dtype=tf.float64, encoding=encoding)
+                shape=(None,), dtype=np.float64, encoding=encoding)
             for name in _FEATURE_NAMES.values()
         }
         features[_LABEL_NAME] = tfds.features.Tensor(
-            shape=(None,), dtype=tf.float64, encoding=encoding)
+            shape=(None,), dtype=np.float64, encoding=encoding)
+        features["query_id"] = tfds.features.Text()
+        features["doc_id"] = tfds.features.Tensor(shape=(None,), dtype=np.int64, encoding=encoding)
         return tfds.core.DatasetInfo(
             builder=self,
             description=_DESCRIPTION,
@@ -87,14 +90,14 @@ class Yahoo(tfds.core.GeneratorBasedBuilder):
         # We do not download the dataset from the web, we just assume that is already in PATH
 
         splits = {
-            "train": self._generate_examples(f"{PATH}/train.txt"),
-            "vali": self._generate_examples(f"{PATH}/vali.txt"),
-            "test": self._generate_examples(f"{PATH}/test.txt")
+            "train": self._generate_examples(str(PATH / "train.txt")),
+            "vali": self._generate_examples(str(PATH / "vali.txt")),
+            "test": self._generate_examples(str(PATH / "test.txt"))
         }
 
         return splits
 
-    def _generate_examples(self, path):
+    def _generate_examples(self, path: str):
         """"Yields examples."""
 
         with tf.io.gfile.GFile(path, "r") as f:

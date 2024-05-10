@@ -1,3 +1,3 @@
-"""yahoo dataset."""
+"""yahoo_rankeval dataset."""
 
-from .yahoo import Yahoo
+from .yahoo_rankeval import YahooRankeval

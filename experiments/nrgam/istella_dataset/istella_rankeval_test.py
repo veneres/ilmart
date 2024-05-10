@@ -1,13 +1,13 @@
-"""yahoo dataset."""
+"""istellarankeval dataset."""
 
 import tensorflow_datasets as tfds
-from . import yahoo
+from . import istella_rankeval
 
 
-class YahooTest(tfds.testing.DatasetBuilderTestCase):
-  """Tests for yahoo dataset."""
-  # TODO(yahoo):
-  DATASET_CLASS = yahoo.Yahoo
+class IstellaRankevalTest(tfds.testing.DatasetBuilderTestCase):
+  """Tests for istella dataset."""
+  # TODO istella test
+  DATASET_CLASS = istella_rankeval.IstellaRankeval
   SPLITS = {
       'train': 3,  # Number of fake train example
       'test': 1,  # Number of fake test example
