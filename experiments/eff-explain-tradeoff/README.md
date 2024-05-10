@@ -1,6 +1,5 @@
-# Interpret Explain Tradeoff experiments
+# Efficiency Explain Tradeoff experiments
 The following scripts have been used inside a docker container run as described in the main README.md file.
-
 Commands used to train the models:
 
 ```bash
