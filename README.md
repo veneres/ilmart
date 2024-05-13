@@ -34,6 +34,8 @@ sh ./build-python.sh install
 After having installed the modified version of LightGBM, you can install and test ILMART simply using:
 
 ```bash
+git clone https://github.com/veneres/ilmart.git
+cd ilmart
 pip install -e .
 ```
 
