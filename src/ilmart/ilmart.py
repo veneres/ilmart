@@ -54,11 +54,18 @@ class Ilmart():
             num_boosting_rounds: int,
             train: rankeval.dataset.dataset.Dataset,
             vali: rankeval.dataset.dataset.Dataset,
-            num_interactions=50, early_stopping_rounds=100) -> None:
+            num_interactions=50,
+            early_stopping_rounds=100,
+            feat_imp: [int] = None) -> None:
 
-        self.fit_main_effects(num_boosting_rounds, train, vali, early_stopping_rounds)
+        self.fit_main_effects(num_boosting_rounds, train, vali, early_stopping_rounds, feat_imp=feat_imp)
         if num_interactions > 0:
-            self.fit_inter_effects(num_boosting_rounds, train, vali, num_interactions, early_stopping_rounds)
+            self.fit_inter_effects(num_boosting_rounds,
+                                   train,
+                                   vali,
+                                   num_interactions,
+                                   early_stopping_rounds,
+                                   feat_imp=feat_imp)
 
     def _add_verbose_log_callback(self, callbacks: list) -> None:
         if self.verbose:
@@ -171,9 +178,11 @@ class Ilmart():
         return new_lgbm_params
 
     def _get_inter_effects_prev_params(self,
+                                       feat_importances: list,
                                        n_inter_effects: int = 0) -> dict:
         new_lgbm_params = copy.deepcopy(self.lgbm_params.copy())
-        most_important_feats = self._get_main_effects_mif()
+        main_effects_feat_used = self._get_main_effects_mif()
+        most_important_feats = [feat for feat in feat_importances if feat in main_effects_feat_used]
         # Looping to find the right amount of main features to use. In this way we avoid problems of dealing with the
         # decimal part of computing n from (n*(n-1) )/ 2 = n_inter_effects
         comb_found = False
@@ -232,7 +241,8 @@ class Ilmart():
                           vali: rankeval.dataset.dataset.Dataset,
                           num_interactions: int,
                           early_stopping_rounds=100,
-                          contrib_boosting_rounds=1000) -> None:
+                          contrib_boosting_rounds=1000,
+                          feat_imp: [int] = None) -> None:
         self._check_fit()
 
         train_lgbm = lgbm.Dataset(train.X, group=train.get_query_sizes(), label=train.y, free_raw_data=False)
@@ -242,7 +252,9 @@ class Ilmart():
             new_lgbm_params = self._get_inter_effects_greedy_params(num_interactions)
 
         elif self.inter_strategy == "prev":
-            new_lgbm_params = self._get_inter_effects_prev_params(num_interactions)
+            if feat_imp is None:
+                raise ValueError("You must the precomputed feature importance (feat_imp) to use the strategy \"prev\"")
+            new_lgbm_params = self._get_inter_effects_prev_params(feat_imp, num_interactions)
 
         else:  # Must be self.inter_strategy == "contrib" since we already check inside the constructor
             if contrib_boosting_rounds is None:

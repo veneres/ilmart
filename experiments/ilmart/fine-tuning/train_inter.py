@@ -21,7 +21,8 @@ def fun_to_optimize(trial: optuna.Trial,
                     vali_dataset: rankeval.dataset.Dataset,
                     inter_effect_strategy: str,
                     n_inter_effects: typing.Optional[int],
-                    main_effect_model_file: str):
+                    main_effect_model_file: str,
+                    feat_imp: list):
     params = copy.deepcopy(fixed_params)
 
     params["learning_rate"] = trial.suggest_float('learning_rate',
@@ -41,7 +42,8 @@ def fun_to_optimize(trial: optuna.Trial,
                             train_dataset,
                             vali_dataset,
                             num_interactions=n_inter_effects,
-                            contrib_boosting_rounds=contrib_boosting_rounds)
+                            contrib_boosting_rounds=contrib_boosting_rounds,
+                            feat_imp=feat_imp)
 
     predictions = model.get_model().predict(vali_dataset.X)
 
@@ -86,6 +88,7 @@ def main():
         boosting_rounds = json_args["boosting_rounds"]
         contrib_boosting_rounds = json_args["contrib_boosting_rounds"]
         hyper_opt_min_max = json_args["hyper_opt_min_max"]
+        feat_imp = json_args["feat_imp"][dataset]
 
     output_path = Path(args.out).resolve()
     n_inter_effects = args.n
@@ -101,7 +104,8 @@ def main():
         "contrib_boosting_rounds": contrib_boosting_rounds,
         "inter_effect_strategy": strategy_inter,
         "n_inter_effects": n_inter_effects,
-        "main_effect_model_file": base_model_path
+        "main_effect_model_file": base_model_path,
+        "feat_imp": feat_imp
     }
     study = optuna.create_study(direction="maximize")
     study.optimize(lambda trial: fun_to_optimize(trial, **config), n_trials=n_trials)
@@ -117,7 +121,8 @@ def main():
                                  datasets["train"],
                                  datasets["vali"],
                                  num_interactions=n_inter_effects,
-                                 contrib_boosting_rounds=contrib_boosting_rounds)
+                                 contrib_boosting_rounds=contrib_boosting_rounds,
+                                 feat_imp=feat_imp)
 
     best_model.get_model().save_model(output_path)
 

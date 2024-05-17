@@ -20,7 +20,7 @@ STRATEGIES = ["greedy", "prev", "contrib"]
 
 DATASETS = ["web30k", "yahoo", "istella"]
 
-DATASET_SUBSETS = ["vali", "test"]
+DATASET_SUBSETS = ["vali"]
 
 
 def compute_for_dir(dataset_name: str,
@@ -42,11 +42,11 @@ def compute_for_dir(dataset_name: str,
             predictions = model.predict(test.X)
             for cutoff in [1, 5, 10]:
                 ndcg = NDCG(cutoff=cutoff, no_relevant_results=1, implementation="exp")
-                res = ndcg.eval(test, predictions)
+                mean_ndcg, detailed_scores = ndcg.eval(test, predictions)
                 entries.append(NDCGEntry(dataset=dataset_name,
                                          budget=budget,
                                          n_feature_used=n_inter_effects,
-                                         ndcg=res[0],
+                                         ndcg=mean_ndcg,
                                          cutoff=cutoff,
                                          main_strategy=main_strategy,
                                          inter_strategy=inter_strategy,

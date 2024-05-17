@@ -42,6 +42,7 @@ def main():
         training_params = json_args["common_params"]
         boosting_rounds = json_args["boosting_rounds"]
         contrib_boosting_rounds = json_args["contrib_boosting_rounds"]
+        feat_imp = json_args["feat_imp"][dataset]
         vali_rounds = json_args["vali_rounds"]
         list_n_inter_effects = json_args["list_n_inter_effects"]
 
@@ -64,7 +65,8 @@ def main():
                 datasets["vali"],
                 num_interactions=n_inter_effects,
                 early_stopping_rounds=vali_rounds,
-                contrib_boosting_rounds=contrib_boosting_rounds
+                contrib_boosting_rounds=contrib_boosting_rounds,
+                feat_imp=feat_imp
             )
 
             best_model.get_model().save_model(output_folder / Path(f"{n_inter_effects}.lgbm"))
