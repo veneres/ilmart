@@ -1,7 +1,6 @@
 # $1 represent the base folder
+set -x #echo on
 
 for dataset in "web30k" "istella" "yahoo"; do
-    COMMAND="python train.py $dataset --base_dir=$1"
-    echo $COMMAND
-    $COMMAND
+    python train.py $dataset --base_dir=$1
 done
