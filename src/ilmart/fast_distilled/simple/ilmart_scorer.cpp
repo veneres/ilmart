@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <iterator>
+#include <limits>    // std::numeric_limits
 #include "ilmart_scorer.h"
 
 IlmartScorerVector::IlmartScorerVector(const std::string &model_path) {
