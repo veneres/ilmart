@@ -1,7 +1,6 @@
 import copy
 import itertools
 
-import lightgbm
 import lightgbm as lgbm
 import rankeval
 from .ilmart_distill import IlmartDistill
@@ -204,7 +203,7 @@ class Ilmart():
         return new_lgbm_params
 
     def _get_inter_effects_contrib_params(self,
-                                          train: lightgbm.Dataset,
+                                          train: lgbm.Dataset,
                                           n_inter_effects: int,
                                           contrib_boosting_round: int) -> dict:
         max_feat_int = (self._model_main_effects.num_feature() * (self._model_main_effects.num_feature() - 1)) // 2
@@ -282,7 +281,7 @@ class Ilmart():
         if self._model_main_effects is None:
             raise Exception("Model not fit yet")
 
-    def get_model(self) -> lightgbm.Booster:
+    def get_model(self) -> lgbm.Booster:
         if self._model_inter is not None:
             return self._model_inter
         return self._model_main_effects

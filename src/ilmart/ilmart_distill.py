@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import itertools
 import math
 from pathlib import Path
 
-import numpy
 import numpy as np
 from collections import defaultdict
 import lightgbm as lgbm
@@ -145,7 +143,7 @@ class IlmartDistill:
 
     # This is mainly for model debugging, all the functions have not been optimized
     def predict(self, X: np.ndarray):
-        res = numpy.zeros(X.shape[0])
+        res = np.zeros(X.shape[0])
         for row_index in range(X.shape[0]):
             res[row_index] = self._predict(X[row_index, :])
         return res

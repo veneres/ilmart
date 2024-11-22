@@ -1,3 +1,25 @@
 [build-system]
-requires = ["setuptools>=42"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ilmart"
+version = "0.0.2"
+description = "A simple package used in the proof of concept of ilmart"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Alberto Veneri", email = "alberto.veneri@unive.it" },
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/veneres/ilmart/issues"
+Homepage = "https://github.com/veneres/ilmart"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ilmart"]

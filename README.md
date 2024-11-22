@@ -76,9 +76,10 @@ docker run \
       --name ilmart2 \
       --rm \
       -i \
-      -v REPLACE_ME_WITH_THE_PATH_TO_ILMART_REPOSITORY:/code/ \
-      -v REPLACE_ME_WITH_THE_PATH_TO_THE_DATA_FOLDER:/data/ \  
-      -v REPLACE_ME_WITH_THE_PATH_TO_THE_RANKEVAL_DATA:/rankeval_data \
+      -v REPLACE_ME_WITH_THE_PATH_TO_ILMART_REPOSITORY:/home/$(id -u)/code/ \
+      -v REPLACE_ME_WITH_THE_PATH_TO_THE_DATA_FOLDER:/home/$(id -u)/data/ \  
+      -v REPLACE_ME_WITH_THE_PATH_TO_THE_RANKEVAL_DATA:/home/$(id -u)/rankeval_data \
+      -v REPLACE_ME_WITH_THE_PATH_TFDS_PATH_FOLDER:/home/$(id -u)/tfds_data \
       -t ilmart:v2.0 bash
 ```
 

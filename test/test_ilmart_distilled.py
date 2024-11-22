@@ -1,8 +1,8 @@
 import unittest
 import lightgbm as lgbm
 from rankeval.dataset.dataset import Dataset as RankEvalDataset
-from src.ilmart.ilmart import IlmartDistill
-from src.ilmart.utils import is_interpretable
+from src import IlmartDistill
+from src import is_interpretable
 import numpy as np
 
 
