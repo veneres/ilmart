@@ -11,7 +11,7 @@ Command used:
 cd /code/src/ilmart/fast_distilled
 mkdir build
 cd build
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 
 # Go back to this folder

@@ -130,15 +130,20 @@ def main():
     )
 
     parser.add_argument("--config_file", type=str, help="Config file for the experiment", default="config.json")
-    parser.add_argument("--out_folder", type=str, help="Output folder", default="/data/perf/preproc")
+    parser.add_argument("--out_folder", type=str, help="Output folder", default="~/data/perf/preproc")
     args = parser.parse_args()
 
     with open(args.config_file, "r") as f:
         config = json.load(f)
         shared_params = config["shared_params"]
 
+        out_folder = Path(args.out_folder)
+        out_folder = out_folder.expanduser()
+        out_folder.mkdir(parents=True, exist_ok=True)
+        out_folder = str(out_folder)
+
         for exp in tqdm(config["experiments"]):
-            create_exp_folder(shared_params, exp, args.out_folder)
+            create_exp_folder(shared_params, exp, out_folder)
 
 
 if __name__ == '__main__':
