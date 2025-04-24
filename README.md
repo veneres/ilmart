@@ -86,7 +86,7 @@ docker run \
 
 Then, you can run the experiments using the commands described in the README of each subfolder.
 An improved documentation will be available upon request.
-All the models and CSV used in the notebooks are available at this [link](https://drive.google.com/file/d/1fuv42ASlgIFCx624hJ2QajWUYCyikxNR/view?usp=sharing).
+All the models and CSV used in the notebooks are available at this [link](https://drive.google.com/drive/folders/1tNSKxOhE13e1bVcOEewHX1vUGATK82g1?usp=sharing).
 
 ## Citation
 If you use our work, please consider to cite it with:
